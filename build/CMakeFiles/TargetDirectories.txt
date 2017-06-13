@@ -1,0 +1,3 @@
+/home/buddy/Documents/cprograms/reduction/build/CMakeFiles/edit_cache.dir
+/home/buddy/Documents/cprograms/reduction/build/CMakeFiles/rebuild_cache.dir
+/home/buddy/Documents/cprograms/reduction/build/CMakeFiles/reduc.dir

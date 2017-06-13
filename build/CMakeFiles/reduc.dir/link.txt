@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/cuda_compile.dir/source/cuda_compile_generated_reduc.cu.o  -o reduc -rdynamic /usr/local/cuda/lib64/libcudart_static.a -lpthread -ldl -lrt 
