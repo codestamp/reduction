@@ -24,7 +24,7 @@ project(reduction-test)
 cuda_compile(REDUC_O source/reduc.cu)	
 # Specify binary name and source file to build it from
 	cuda_add_executable(
-			reduc ${REDUC_O} includes/utils.cuh
+			reduc ${REDUC_O} includes/utils.cuh includes/gputimer.h
 			)
 
 # For linking ...
