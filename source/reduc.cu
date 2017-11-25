@@ -13,6 +13,66 @@
 #define BLOCK_SIZE 128
 
 using namespace std;
+
+__global__
+void reduce3(int *g_idata,int *g_odata)
+{
+	extern __shared__ int sdata[];
+
+	//each thread loads one element from global to shared memory
+	unsigned int tid=threadIdx.x;
+	unsigned int i=threadIdx.x+blockIdx.x*blockDim.x;
+
+	sdata[tid]=g_idata[i];
+	__syncthreads();
+
+
+	//do reduction in shared memory
+	for(unsigned int s=blockDim.x/2;s>0;s>0,s>>=1) {
+		if(tid<s) {
+			sdata[tid] += sdata[tid+s];
+		}
+		__syncthreads();
+	}
+
+	//write the result for this block to global mem
+	if(tid==0)
+		g_odata[blockIdx.x]=sdata[0];
+
+}
+
+float reduc3func(int *g_idata,int *g_odata,int GRID_SIZE) {
+
+	GpuTimer gp;
+	gp.Start();
+
+	int *h_odata;
+	h_odata=(int*)malloc(sizeof(int)*GRID_SIZE);
+
+	reduce3<<<GRID_SIZE,BLOCK_SIZE, sizeof(int)*BLOCK_SIZE>>>(g_idata,g_odata);
+
+	gp.Stop();
+
+	gpuErrchk(cudaMemcpy(h_odata,g_odata,sizeof(int)*GRID_SIZE,cudaMemcpyDeviceToHost));
+
+//	for(int i=0;i<GRID_SIZE;i++)
+//		cout << h_odata[i] << endl;
+
+
+	int sum=0;
+	for(int i=0;i<GRID_SIZE;i++)
+			sum+=h_odata[i];
+
+	cout << "Parallel Reduction3 sum = " << sum << endl;
+
+	//cout << gp.Elapsed() << " milli secs (reduction-1)" << endl;
+
+	free(h_odata);
+
+	return gp.Elapsed();
+}
+	
+
 __global__
 void reduce2(int *g_idata,int *g_odata)
 {
@@ -160,6 +220,7 @@ int main() {
 
 	float elapsedReduc1=reduc1func(g_idata,g_odata,GRID_SIZE);
 	float elapsedReduc2=reduc2func(g_idata,g_odata,GRID_SIZE);
+	float elapsedReduc3=reduc3func(g_idata,g_odata,GRID_SIZE);
 	
 
 	//Serial reduce
@@ -171,12 +232,11 @@ int main() {
 
 	cout << "Reduction 1  elapsed time (milli seconds): " << elapsedReduc1 << endl;
 	cout << "Reduction 2  elapsed time (milli seconds): " << elapsedReduc2 << endl;
+	cout << "Reduction 3  elapsed time (milli seconds): " << elapsedReduc3 << endl;
 
-
-	
 	cout << "Reduction 1  Effective Bandwidth (GB/s): " << ARRSZ*4*2/elapsedReduc1/1e6 << endl;
 	cout << "Reduction 2  Effective Bandwidth (GB/s): " << ARRSZ*4*2/elapsedReduc2/1e6 << endl;
-
+	cout << "Reduction 3  Effective Bandwidth (GB/s): " << ARRSZ*4*2/elapsedReduc3/1e6 << endl;
 
 	free(h_idata);
 	cudaFree(g_idata);
